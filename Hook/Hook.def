@@ -1,0 +1,6 @@
+; Hook.def : Declares the module parameters for the DLL.
+
+LIBRARY      "Hook"
+
+EXPORTS
+    ; Explicit exports can go here

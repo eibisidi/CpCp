@@ -1,0 +1,35 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual Studio 2008
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CpCp", "CpCp\CpCp.vcproj", "{A32C4DA1-03D1-48C9-8310-CD89933801C7}"
+	ProjectSection(ProjectDependencies) = postProject
+		{8716F01A-2CEE-46B6-8647-51BB494462FD} = {8716F01A-2CEE-46B6-8647-51BB494462FD}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Hook", "Hook\Hook.vcproj", "{8716F01A-2CEE-46B6-8647-51BB494462FD}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ypyp", "ypyp\ypyp.vcproj", "{BD6F4D17-7894-41F9-B31A-BD8FA1134611}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{A32C4DA1-03D1-48C9-8310-CD89933801C7}.Debug|Win32.ActiveCfg = Debug|Win32
+		{A32C4DA1-03D1-48C9-8310-CD89933801C7}.Debug|Win32.Build.0 = Debug|Win32
+		{A32C4DA1-03D1-48C9-8310-CD89933801C7}.Release|Win32.ActiveCfg = Release|Win32
+		{A32C4DA1-03D1-48C9-8310-CD89933801C7}.Release|Win32.Build.0 = Release|Win32
+		{8716F01A-2CEE-46B6-8647-51BB494462FD}.Debug|Win32.ActiveCfg = Debug|Win32
+		{8716F01A-2CEE-46B6-8647-51BB494462FD}.Debug|Win32.Build.0 = Debug|Win32
+		{8716F01A-2CEE-46B6-8647-51BB494462FD}.Release|Win32.ActiveCfg = Release|Win32
+		{8716F01A-2CEE-46B6-8647-51BB494462FD}.Release|Win32.Build.0 = Release|Win32
+		{BD6F4D17-7894-41F9-B31A-BD8FA1134611}.Debug|Win32.ActiveCfg = Debug|Win32
+		{BD6F4D17-7894-41F9-B31A-BD8FA1134611}.Debug|Win32.Build.0 = Debug|Win32
+		{BD6F4D17-7894-41F9-B31A-BD8FA1134611}.Release|Win32.ActiveCfg = Release|Win32
+		{BD6F4D17-7894-41F9-B31A-BD8FA1134611}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
