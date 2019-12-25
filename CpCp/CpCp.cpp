@@ -4,6 +4,9 @@
 #include "stdafx.h"
 #include "CpCp.h"
 #include "libHook.h"
+#include <atlstr.h>		//for Cstring
+#include <deque>
+
 #define MAX_LOADSTRING 100
 
 // Global Variables:
@@ -26,7 +29,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 	UNREFERENCED_PARAMETER(lpCmdLine);
 
  	// TODO: Place code here.
-	InstallHook(GetCurrentThreadId());
+	//InstallHook(GetCurrentThreadId());
 
 	MSG msg;
 	HACCEL hAccelTable;
@@ -47,12 +50,7 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 	// Main message loop:
 	while (GetMessage(&msg, NULL, 0, 0))
 	{
-		if (WM_HOOKER_PASTE == msg.message)
-		{//Messages sent by PostThreadMessage are not associated with a window. 
-		 //As a general rule, messages that are not associated with a window cannot be dispatched by the DispatchMessage function
-			DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), NULL, About);
-		}
-		else if (!TranslateAccelerator(msg.hwnd, hAccelTable, &msg))
+		if (!TranslateAccelerator(msg.hwnd, hAccelTable, &msg))
 		{
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
@@ -131,6 +129,56 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    return TRUE;
 }
 
+typedef std::deque<CString> ClipBoardBuffer;
+#define MAX_CB_SIZE (10)
+ClipBoardBuffer cbBuffer;
+
+void WINAPI UpdateCpCp(HWND hwnd)
+{
+	if (CountClipboardFormats() == 0) 
+		return; 
+
+	// Open the clipboard. 
+	if (!OpenClipboard(hwnd)) 
+		return; 
+
+	if (IsClipboardFormatAvailable(CF_TEXT))
+	{
+		HGLOBAL		hglb;
+		LPTSTR		lptstr;
+		
+		hglb = GetClipboardData(CF_UNICODETEXT);
+		if(hglb != NULL)
+		{
+			lptstr = (LPTSTR)GlobalLock(hglb);
+			if (lptstr != NULL)
+			{
+				cbBuffer.push_front(lptstr);
+				if(cbBuffer.size() > MAX_CB_SIZE)		//if entries count exceeds 10, erase one
+					cbBuffer.pop_back();
+			}
+			GlobalUnlock(hglb);
+		}
+	}
+
+	// Close the clipboard. 
+	CloseClipboard(); 
+}
+
+void WINAPI HandlePaste(WPARAM wParam, LPARAM lParam)
+{
+	UNREFERENCED_PARAMETER(lParam);
+
+	Sleep(100);
+
+	HWND hForeWnd = (HWND) wParam;
+	keybd_event(VK_CONTROL, 0, 0, 0);				// press ctrl
+	keybd_event(0x56, 0, 0, 0);						// press v
+	keybd_event(0x56, 0, KEYEVENTF_KEYUP, 0);		//release v
+	keybd_event(VK_CONTROL, 0, KEYEVENTF_KEYUP, 0); //release ctrl
+	//PostMessage(hForeWnd, WM_CLOSE, 0, 0);
+}
+
 //
 //  FUNCTION: WndProc(HWND, UINT, WPARAM, LPARAM)
 //
@@ -143,6 +191,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 //
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
+	static HWND hwndNextViewer;
 	int wmId, wmEvent;
 	PAINTSTRUCT ps;
 	HDC hdc;
@@ -171,8 +220,33 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		EndPaint(hWnd, &ps);
 		break;
 	case WM_DESTROY:
+		ChangeClipboardChain(hWnd, hwndNextViewer); 
 		PostQuitMessage(0);
 		break;
+	case WM_CREATE: 
+		// Add the window to the clipboard viewer chain. 
+		hwndNextViewer = SetClipboardViewer(hWnd); 
+		InstallHook(hWnd);
+		break; 
+	case WM_CHANGECBCHAIN: 
+		// If the next window is closing, repair the chain. 
+		if ((HWND) wParam == hwndNextViewer) 
+			hwndNextViewer = (HWND) lParam; 
+		// Otherwise, pass the message to the next link. 
+		else if (hwndNextViewer != NULL) 
+			SendMessage(hwndNextViewer, message, wParam, lParam); 
+		break; 
+	case WM_DRAWCLIPBOARD:  // clipboard contents changed. 
+		// Update the window by using Auto clipboard format. 
+		UpdateCpCp(hWnd); 
+		// Pass the message to the next window in clipboard 
+		// viewer chain. 
+		SendMessage(hwndNextViewer, message, wParam, lParam); 
+		break;
+	case WM_HOOKER_PASTE:
+		HandlePaste(wParam, lParam);
+		break;
+
 	default:
 		return DefWindowProc(hWnd, message, wParam, lParam);
 	}
