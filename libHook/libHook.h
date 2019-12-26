@@ -5,7 +5,7 @@
 
 #define DllExport __declspec(dllexport)
 
-#define WM_HOOKER_CC	(WM_USER + 1)
+#define WM_TRAY_ICON	(WM_USER + 1)
 #define WM_HOOKER_PASTE	(WM_USER + 2)
 
 DllExport void WINAPI InstallHook(HWND hWnd);

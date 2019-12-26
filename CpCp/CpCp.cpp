@@ -6,6 +6,8 @@
 #include "libHook.h"
 #include <atlstr.h>		//for Cstring
 #include <deque>
+#include <Shellapi.h>	//for Shell_NotifyIcon
+#include <strsafe.h>
 
 #define MAX_LOADSTRING 100
 
@@ -39,6 +41,20 @@ void formatMenuText(size_t idx)
 		menuText[idx].Append(_T("..."));
 	else
 		menuText[idx].Append(_T("   "));
+}
+
+//Minimize AppWnd To Tray
+void minToTray()
+{ 
+	NOTIFYICONDATA nid;   
+	nid.cbSize=(DWORD)sizeof(NOTIFYICONDATA); 
+	nid.hWnd=appWnd;
+	nid.uID=IDR_MAINFRAME; 
+	nid.uFlags=NIF_ICON|NIF_MESSAGE|NIF_TIP ; 
+	nid.uCallbackMessage=WM_TRAY_ICON;
+	nid.hIcon=LoadIcon(hInst,MAKEINTRESOURCE(IDI_SMALL)); 
+	StringCchCopy(nid.szTip, ARRAYSIZE(nid.szTip), _T("CPCP: A Homebrew ClipBoard Extension!"));
+	Shell_NotifyIcon(NIM_ADD,&nid);
 }
 
 int APIENTRY _tWinMain(HINSTANCE hInstance,
@@ -133,7 +149,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
    hInst = hInstance; // Store instance handle in our global variable
 
-   appWnd = CreateWindow(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
+   appWnd = CreateWindow(szWindowClass, szTitle, WS_ICONIC,
       CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, NULL, NULL, hInstance, NULL);
 
    if (!appWnd)
@@ -142,6 +158,10 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    }
 
    //ShowWindow(appWnd, nCmdShow);
+
+   minToTray();
+
+   //ShowWindow(SW_HIDE);
    UpdateWindow(appWnd);
 
    return TRUE;
