@@ -141,7 +141,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
       return FALSE;
    }
 
-   ShowWindow(appWnd, nCmdShow);
+   //ShowWindow(appWnd, nCmdShow);
    UpdateWindow(appWnd);
 
    return TRUE;
@@ -187,12 +187,14 @@ void WINAPI UpdateCpCp(HWND hwnd)
 
 void WINAPI HandlePaste(WPARAM wParam, LPARAM lParam)
 {
-	UNREFERENCED_PARAMETER(wParam);
 	UNREFERENCED_PARAMETER(lParam);
 
 	HWND prevForeWnd = (HWND)wParam;
 
-	Sleep(100);
+	//Get Current Mouse Cousor Position
+	POINT curorPos;
+	if (!GetCursorPos(&curorPos))
+		return;
 
 	//Create the ClipBoard Menu
 	HMENU cpMenu = CreatePopupMenu();
@@ -206,7 +208,7 @@ void WINAPI HandlePaste(WPARAM wParam, LPARAM lParam)
 		AppendMenu(cpMenu, MF_STRING, (i+1)/*menuitem id*/, menuText[i]); 
 	}
 
-	//Change Focus(to enable arrow keys & Esc)
+	//Steal Focus(in order to enable arrow keys & Esc)
 	HWND hCurWnd = ::GetForegroundWindow();   
 	DWORD dwCurID = ::GetWindowThreadProcessId(hCurWnd, NULL);   
 	DWORD dwThisID = ::GetCurrentThreadId();   
@@ -217,8 +219,8 @@ void WINAPI HandlePaste(WPARAM wParam, LPARAM lParam)
 	int select = 
 		TrackPopupMenu(cpMenu,
 		TPM_LEFTALIGN | TPM_TOPALIGN | TPM_NONOTIFY | TPM_RETURNCMD,
-		100,
-		100,
+		curorPos.x,
+		curorPos.y,
 		0,
 		appWnd,
 		NULL);
