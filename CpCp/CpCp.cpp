@@ -50,7 +50,6 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 	UNREFERENCED_PARAMETER(lpCmdLine);
 
  	// TODO: Place code here.
-	//InstallHook(GetCurrentThreadId());
 
 	MSG msg;
 	HACCEL hAccelTable;
@@ -148,9 +147,8 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    return TRUE;
 }
 
-
-
-//Get data from system clipboard and and content to buffer
+//Get data from system clipboard
+//Save it to buffer
 void WINAPI UpdateCpCp(HWND hwnd)
 {
 	if (CountClipboardFormats() == 0) 
@@ -187,12 +185,12 @@ void WINAPI UpdateCpCp(HWND hwnd)
 	CloseClipboard(); 
 }
 
-
-
 void WINAPI HandlePaste(WPARAM wParam, LPARAM lParam)
 {
 	UNREFERENCED_PARAMETER(wParam);
 	UNREFERENCED_PARAMETER(lParam);
+
+	HWND prevForeWnd = (HWND)wParam;
 
 	Sleep(100);
 
@@ -208,7 +206,12 @@ void WINAPI HandlePaste(WPARAM wParam, LPARAM lParam)
 		AppendMenu(cpMenu, MF_STRING, (i+1)/*menuitem id*/, menuText[i]); 
 	}
 
-	SetFocus(cpMenu);
+	//Change Focus(to enable arrow keys & Esc)
+	HWND hCurWnd = ::GetForegroundWindow();   
+	DWORD dwCurID = ::GetWindowThreadProcessId(hCurWnd, NULL);   
+	DWORD dwThisID = ::GetCurrentThreadId();   
+	::AttachThreadInput(dwCurID, dwThisID, TRUE);   
+	::SetForegroundWindow(appWnd);   
 
 	//Show menu
 	int select = 
@@ -220,20 +223,23 @@ void WINAPI HandlePaste(WPARAM wParam, LPARAM lParam)
 		appWnd,
 		NULL);
 
-	DWORD dwError = GetLastError();
-
 	DestroyMenu(cpMenu);
 
-	//no selection
+	//Restore Focus
+	::AttachThreadInput(dwCurID, dwThisID, FALSE);
+	::SetForegroundWindow(prevForeWnd);
+
+	//No selection
 	if (select <= 0)
 		return;
 
 	if (!OpenClipboard(appWnd)) 
 		return;
 	
-	EmptyClipboard(); 
+	EmptyClipboard(); //is it needed?
 
 	idxActive = select - 1;
+
 	// Allocate a global memory object for the text. 
 	CString & selectedContent = cbBuffer[idxActive];
 	int   cch = selectedContent.GetLength();
@@ -255,11 +261,11 @@ void WINAPI HandlePaste(WPARAM wParam, LPARAM lParam)
 	SetClipboardData(CF_UNICODETEXT, hglbCopy);
 	CloseClipboard();
 
-	//mimic ctrl+C
+	//mimic ctrl+V
 	keybd_event(VK_CONTROL, 0, 0, 0);				// press ctrl
 	keybd_event(0x56, 0, 0, 0);						// press v
-	keybd_event(0x56, 0, KEYEVENTF_KEYUP, 0);		//release v
-	keybd_event(VK_CONTROL, 0, KEYEVENTF_KEYUP, 0); //release ctrl
+	keybd_event(0x56, 0, KEYEVENTF_KEYUP, 0);		// release v
+	keybd_event(VK_CONTROL, 0, KEYEVENTF_KEYUP, 0); // release ctrl
 }
 
 //
@@ -320,7 +326,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			SendMessage(hwndNextViewer, message, wParam, lParam); 
 		break; 
 	case WM_DRAWCLIPBOARD:  // clipboard contents changed. 
-		// Update the window by using Auto clipboard format. 
+		// Update our cbBuffer
 		UpdateCpCp(hWnd); 
 		// Pass the message to the next window in clipboard 
 		// viewer chain. 
