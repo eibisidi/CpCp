@@ -17,12 +17,10 @@ LRESULT CALLBACK KeyBoard_LL(int nCode,WPARAM wParam,LPARAM lParam)
 		return CallNextHookEx(HookPaste, nCode, wParam, lParam); 
 
 	BOOL ret;
-
+	KBDLLHOOKSTRUCT *  key = (KBDLLHOOKSTRUCT *)lParam;
 	switch (wParam)
 	{
 	case WM_KEYDOWN:
-		KBDLLHOOKSTRUCT *  key = (KBDLLHOOKSTRUCT *)lParam;
-
 		if (0x56 == key->vkCode
 			&& (GetAsyncKeyState(VK_LWIN) & 0x8000))
 #if 0
@@ -37,7 +35,7 @@ LRESULT CALLBACK KeyBoard_LL(int nCode,WPARAM wParam,LPARAM lParam)
 		}
 		break;
 	case WM_KEYUP:
-		KBDLLHOOKSTRUCT *  key = (KBDLLHOOKSTRUCT *)lParam;
+
 
 		if (0x56 == key->vkCode
 			&& (GetAsyncKeyState(VK_LWIN) & 0x8000))

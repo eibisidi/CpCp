@@ -20,6 +20,27 @@ BOOL				InitInstance(HINSTANCE, int);
 LRESULT CALLBACK	WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK	About(HWND, UINT, WPARAM, LPARAM);
 
+#define MAX_CB_SIZE (10)
+#define MAX_MENU_LEN (40)
+HWND	appWnd;
+
+typedef std::deque<CString> ClipBoardBuffer;
+ClipBoardBuffer cbBuffer;							//CPCP ClipBoard Buffer
+int				idxActive;							//Current Active entry
+
+CString menuText[MAX_CB_SIZE];
+void formatMenuText(size_t idx)
+{
+#define MAX_DISP_LEN (30)
+	const CString & content = cbBuffer[idx];
+	bool toolong = (content.GetLength() > MAX_DISP_LEN);
+	menuText[idx].Format(_T("%-40s"), content.Left(MAX_DISP_LEN));
+	if(toolong)
+		menuText[idx].Append(_T("..."));
+	else
+		menuText[idx].Append(_T("   "));
+}
+
 int APIENTRY _tWinMain(HINSTANCE hInstance,
                      HINSTANCE hPrevInstance,
                      LPTSTR    lpCmdLine,
@@ -111,28 +132,25 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
 //
 BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
-   HWND hWnd;
-
    hInst = hInstance; // Store instance handle in our global variable
 
-   hWnd = CreateWindow(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
+   appWnd = CreateWindow(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
       CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, NULL, NULL, hInstance, NULL);
 
-   if (!hWnd)
+   if (!appWnd)
    {
       return FALSE;
    }
 
-   ShowWindow(hWnd, nCmdShow);
-   UpdateWindow(hWnd);
+   ShowWindow(appWnd, nCmdShow);
+   UpdateWindow(appWnd);
 
    return TRUE;
 }
 
-typedef std::deque<CString> ClipBoardBuffer;
-#define MAX_CB_SIZE (10)
-ClipBoardBuffer cbBuffer;
 
+
+//Get data from system clipboard and and content to buffer
 void WINAPI UpdateCpCp(HWND hwnd)
 {
 	if (CountClipboardFormats() == 0) 
@@ -153,9 +171,13 @@ void WINAPI UpdateCpCp(HWND hwnd)
 			lptstr = (LPTSTR)GlobalLock(hglb);
 			if (lptstr != NULL)
 			{
-				cbBuffer.push_front(lptstr);
-				if(cbBuffer.size() > MAX_CB_SIZE)		//if entries count exceeds 10, erase one
-					cbBuffer.pop_back();
+				if (cbBuffer.empty()
+					|| 0 != cbBuffer[idxActive].Compare(lptstr))	//different from our explicitly SetClipboardData call 
+				{
+					cbBuffer.push_front(lptstr);
+					if(cbBuffer.size() > MAX_CB_SIZE)		//if entries count exceeds 10, erase one
+						cbBuffer.pop_back();
+				}
 			}
 			GlobalUnlock(hglb);
 		}
@@ -165,18 +187,79 @@ void WINAPI UpdateCpCp(HWND hwnd)
 	CloseClipboard(); 
 }
 
+
+
 void WINAPI HandlePaste(WPARAM wParam, LPARAM lParam)
 {
+	UNREFERENCED_PARAMETER(wParam);
 	UNREFERENCED_PARAMETER(lParam);
 
 	Sleep(100);
 
-	HWND hForeWnd = (HWND) wParam;
+	//Create the ClipBoard Menu
+	HMENU cpMenu = CreatePopupMenu();
+	if (!cpMenu)
+		return;
+
+	//Populate menu
+	for(size_t i = 0; i < cbBuffer.size(); ++i)
+	{
+		formatMenuText(i);
+		AppendMenu(cpMenu, MF_STRING, (i+1)/*menuitem id*/, menuText[i]); 
+	}
+
+	SetFocus(cpMenu);
+
+	//Show menu
+	int select = 
+		TrackPopupMenu(cpMenu,
+		TPM_LEFTALIGN | TPM_TOPALIGN | TPM_NONOTIFY | TPM_RETURNCMD,
+		100,
+		100,
+		0,
+		appWnd,
+		NULL);
+
+	DWORD dwError = GetLastError();
+
+	DestroyMenu(cpMenu);
+
+	//no selection
+	if (select <= 0)
+		return;
+
+	if (!OpenClipboard(appWnd)) 
+		return;
+	
+	EmptyClipboard(); 
+
+	idxActive = select - 1;
+	// Allocate a global memory object for the text. 
+	CString & selectedContent = cbBuffer[idxActive];
+	int   cch = selectedContent.GetLength();
+	HGLOBAL hglbCopy = GlobalAlloc(GMEM_MOVEABLE, (cch + 1) * sizeof(TCHAR)); 
+	if (hglbCopy == NULL) 
+	{ 
+		CloseClipboard(); 
+		return; 
+	} 
+
+	// Lock the handle and copy the text to the buffer. 
+	LPTSTR  lptstrCopy = (LPTSTR)GlobalLock(hglbCopy); 
+	memcpy(lptstrCopy, selectedContent.GetBuffer(), cch * sizeof(TCHAR));
+	lptstrCopy[cch] = (TCHAR) 0;    // null character 
+	
+	GlobalUnlock(hglbCopy); 
+
+	//Replace system Clip Board
+	SetClipboardData(CF_UNICODETEXT, hglbCopy);
+	CloseClipboard();
+
+	//mimic ctrl+C
 	keybd_event(VK_CONTROL, 0, 0, 0);				// press ctrl
 	keybd_event(0x56, 0, 0, 0);						// press v
 	keybd_event(0x56, 0, KEYEVENTF_KEYUP, 0);		//release v
 	keybd_event(VK_CONTROL, 0, KEYEVENTF_KEYUP, 0); //release ctrl
-	//PostMessage(hForeWnd, WM_CLOSE, 0, 0);
 }
 
 //
