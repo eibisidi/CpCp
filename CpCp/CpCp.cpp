@@ -25,6 +25,7 @@ INT_PTR CALLBACK	About(HWND, UINT, WPARAM, LPARAM);
 #define MAX_CB_SIZE (10)	//Max cbBuffer size
 #define MAX_MENU_LEN (40)	//Max text displayable length
 HWND	appWnd;
+HANDLE  singletonMutex;
 
 //Notification Area Popup Menuitem IDs
 enum 
@@ -162,6 +163,15 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
 BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
    hInst = hInstance; // Store instance handle in our global variable
+
+   if (NULL == (singletonMutex = CreateMutex(NULL, FALSE, szWindowClass)))
+	   return FALSE;
+   if (ERROR_ALREADY_EXISTS == GetLastError())   //Already running
+   {
+	   CloseHandle(singletonMutex);
+	   singletonMutex = NULL;
+	   return FALSE;
+   }
 
    appWnd = CreateWindow(szWindowClass, szTitle, WS_ICONIC,
       CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, NULL, NULL, hInstance, NULL);
@@ -408,6 +418,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		ChangeClipboardChain(hWnd, hwndNextViewer); 
 		UninstallHook();		//Remove Hook
 		DelFromTray();			//Remove Tray Icon
+		CloseHandle(singletonMutex);
 		PostQuitMessage(0);
 		break;
 	case WM_CREATE: 
