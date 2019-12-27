@@ -11,5 +11,6 @@ B>How to Use?
 3:To invoke CPCP Clipboard : Press LWindows + V 
 
 使用很简单
+运行CpCp.exe
 按下左Win键+V键，唤醒CPCP剪贴板
 
