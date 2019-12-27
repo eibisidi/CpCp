@@ -22,16 +22,23 @@ BOOL				InitInstance(HINSTANCE, int);
 LRESULT CALLBACK	WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK	About(HWND, UINT, WPARAM, LPARAM);
 
-#define MAX_CB_SIZE (10)
-#define MAX_MENU_LEN (40)
+#define MAX_CB_SIZE (10)	//Max cbBuffer size
+#define MAX_MENU_LEN (40)	//Max text displayable length
 HWND	appWnd;
+
+//Notification Area Popup Menuitem IDs
+enum 
+{
+	POPMENU_IDM_EXIT = 1,
+	POPMENU_IDM_ABOUT,
+};
 
 typedef std::deque<CString> ClipBoardBuffer;
 ClipBoardBuffer cbBuffer;							//CPCP ClipBoard Buffer
 int				idxActive;							//Current Active entry
 
 CString menuText[MAX_CB_SIZE];
-void formatMenuText(size_t idx)
+void FormatMenuText(size_t idx)
 {
 #define MAX_DISP_LEN (30)
 	const CString & content = cbBuffer[idx];
@@ -44,17 +51,27 @@ void formatMenuText(size_t idx)
 }
 
 //Minimize AppWnd To Tray
-void minToTray()
+void MinToTray()
 { 
 	NOTIFYICONDATA nid;   
 	nid.cbSize=(DWORD)sizeof(NOTIFYICONDATA); 
 	nid.hWnd=appWnd;
-	nid.uID=IDR_MAINFRAME; 
+	nid.uID=IDI_SMALL; 
 	nid.uFlags=NIF_ICON|NIF_MESSAGE|NIF_TIP ; 
 	nid.uCallbackMessage=WM_TRAY_ICON;
 	nid.hIcon=LoadIcon(hInst,MAKEINTRESOURCE(IDI_SMALL)); 
 	StringCchCopy(nid.szTip, ARRAYSIZE(nid.szTip), _T("CPCP: A Homebrew ClipBoard Extension!"));
 	Shell_NotifyIcon(NIM_ADD,&nid);
+}
+
+//Delete Icon From Tray
+void DelFromTray()
+{
+	NOTIFYICONDATA nid;
+	nid.cbSize=(DWORD)sizeof(NOTIFYICONDATA);
+	nid.hWnd=appWnd;
+	nid.uID=IDI_SMALL;
+	Shell_NotifyIcon(NIM_DELETE,&nid);
 }
 
 int APIENTRY _tWinMain(HINSTANCE hInstance,
@@ -92,9 +109,6 @@ int APIENTRY _tWinMain(HINSTANCE hInstance,
 			DispatchMessage(&msg);
 		}
 	}
-
-
-	UninstallHook();
 
 	return (int) msg.wParam;
 }
@@ -157,11 +171,9 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
       return FALSE;
    }
 
-   //ShowWindow(appWnd, nCmdShow);
+   //Minimize to tray notification area
+   MinToTray();
 
-   minToTray();
-
-   //ShowWindow(SW_HIDE);
    UpdateWindow(appWnd);
 
    return TRUE;
@@ -224,7 +236,7 @@ void WINAPI HandlePaste(WPARAM wParam, LPARAM lParam)
 	//Populate menu
 	for(size_t i = 0; i < cbBuffer.size(); ++i)
 	{
-		formatMenuText(i);
+		FormatMenuText(i);
 		AppendMenu(cpMenu, MF_STRING, (i+1)/*menuitem id*/, menuText[i]); 
 	}
 
@@ -290,6 +302,57 @@ void WINAPI HandlePaste(WPARAM wParam, LPARAM lParam)
 	keybd_event(VK_CONTROL, 0, KEYEVENTF_KEYUP, 0); // release ctrl
 }
 
+void WINAPI HandleTrayIcon(WPARAM wParam, LPARAM lParam)
+{
+	if(IDI_SMALL != wParam)
+		return;
+
+	switch(lParam)
+	{
+		case WM_RBUTTONUP:
+		{
+			//Get Current Mouse Cousor Position
+			POINT curorPos;
+			if (!GetCursorPos(&curorPos))
+				return;
+
+			//Create Popup Menu
+			HMENU trayMenu = CreatePopupMenu();
+			if (!trayMenu)
+				return;
+
+			//Add Menu Items
+			AppendMenu(trayMenu, MF_STRING, POPMENU_IDM_EXIT, _T("Exit")); 
+			AppendMenu(trayMenu, MF_STRING, POPMENU_IDM_ABOUT, _T("About...")); 
+
+			//Show menu
+			int select = 
+				TrackPopupMenu(trayMenu,
+				TPM_LEFTALIGN | TPM_BOTTOMALIGN | TPM_NONOTIFY | TPM_RETURNCMD,
+				curorPos.x,
+				curorPos.y,
+				0,
+				appWnd,
+				NULL);
+
+			DestroyMenu(trayMenu);
+
+			if(POPMENU_IDM_EXIT == select)				//Exit
+				PostMessage(appWnd, WM_DESTROY, 0, 0);
+			else if (POPMENU_IDM_ABOUT == select)		//Display About Dialog
+				DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), appWnd, About);
+		}
+		break;
+		case WM_LBUTTONDBLCLK:
+		{
+			;//Todo
+		}
+		break;
+	default:
+		break;
+	}
+}
+
 //
 //  FUNCTION: WndProc(HWND, UINT, WPARAM, LPARAM)
 //
@@ -332,12 +395,14 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		break;
 	case WM_DESTROY:
 		ChangeClipboardChain(hWnd, hwndNextViewer); 
+		UninstallHook();		//Remove Hook
+		DelFromTray();			//Remove Tray Icon
 		PostQuitMessage(0);
 		break;
 	case WM_CREATE: 
 		// Add the window to the clipboard viewer chain. 
 		hwndNextViewer = SetClipboardViewer(hWnd); 
-		InstallHook(hWnd);
+		InstallHook(hWnd);		//Setup Hook
 		break; 
 	case WM_CHANGECBCHAIN: 
 		// If the next window is closing, repair the chain. 
@@ -357,7 +422,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	case WM_HOOKER_PASTE:
 		HandlePaste(wParam, lParam);
 		break;
-
+	case WM_TRAY_ICON:
+		HandleTrayIcon(wParam, lParam);
+		break;
 	default:
 		return DefWindowProc(hWnd, message, wParam, lParam);
 	}
