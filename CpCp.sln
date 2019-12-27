@@ -1,11 +1,10 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 10.00
 # Visual Studio 2008
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Hook", "Hook\Hook.vcproj", "{8716F01A-2CEE-46B6-8647-51BB494462FD}"
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CpCp", "CpCp\CpCp.vcproj", "{52F26311-206F-4E4C-A290-70DF20A41C9D}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Hooks", "Hooks\Hooks.vcproj", "{C8CF2FF5-36BE-4885-A7A8-9ED42EB16B09}"
+	ProjectSection(ProjectDependencies) = postProject
+		{180A1FAF-93F1-44C6-A62C-B3191873081D} = {180A1FAF-93F1-44C6-A62C-B3191873081D}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libHook", "libHook\libHook.vcproj", "{180A1FAF-93F1-44C6-A62C-B3191873081D}"
 EndProject
@@ -15,18 +14,10 @@ Global
 		Release|Win32 = Release|Win32
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{8716F01A-2CEE-46B6-8647-51BB494462FD}.Debug|Win32.ActiveCfg = Debug|Win32
-		{8716F01A-2CEE-46B6-8647-51BB494462FD}.Debug|Win32.Build.0 = Debug|Win32
-		{8716F01A-2CEE-46B6-8647-51BB494462FD}.Release|Win32.ActiveCfg = Release|Win32
-		{8716F01A-2CEE-46B6-8647-51BB494462FD}.Release|Win32.Build.0 = Release|Win32
 		{52F26311-206F-4E4C-A290-70DF20A41C9D}.Debug|Win32.ActiveCfg = Debug|Win32
 		{52F26311-206F-4E4C-A290-70DF20A41C9D}.Debug|Win32.Build.0 = Debug|Win32
 		{52F26311-206F-4E4C-A290-70DF20A41C9D}.Release|Win32.ActiveCfg = Release|Win32
 		{52F26311-206F-4E4C-A290-70DF20A41C9D}.Release|Win32.Build.0 = Release|Win32
-		{C8CF2FF5-36BE-4885-A7A8-9ED42EB16B09}.Debug|Win32.ActiveCfg = Debug|Win32
-		{C8CF2FF5-36BE-4885-A7A8-9ED42EB16B09}.Debug|Win32.Build.0 = Debug|Win32
-		{C8CF2FF5-36BE-4885-A7A8-9ED42EB16B09}.Release|Win32.ActiveCfg = Release|Win32
-		{C8CF2FF5-36BE-4885-A7A8-9ED42EB16B09}.Release|Win32.Build.0 = Release|Win32
 		{180A1FAF-93F1-44C6-A62C-B3191873081D}.Debug|Win32.ActiveCfg = Debug|Win32
 		{180A1FAF-93F1-44C6-A62C-B3191873081D}.Debug|Win32.Build.0 = Debug|Win32
 		{180A1FAF-93F1-44C6-A62C-B3191873081D}.Release|Win32.ActiveCfg = Release|Win32
