@@ -40,10 +40,10 @@ int				idxActive;							//Current Active entry
 CString menuText[MAX_CB_SIZE];
 void FormatMenuText(size_t idx)
 {
-#define MAX_DISP_LEN (30)
+#define MAX_DISP_LEN (50)
 	const CString & content = cbBuffer[idx];
 	bool toolong = (content.GetLength() > MAX_DISP_LEN);
-	menuText[idx].Format(_T("%-40s"), content.Left(MAX_DISP_LEN));
+	menuText[idx].Format(_T("%-50s"), content.Left(MAX_DISP_LEN));
 	if(toolong)
 		menuText[idx].Append(_T("..."));
 	else
@@ -325,6 +325,13 @@ void WINAPI HandleTrayIcon(WPARAM wParam, LPARAM lParam)
 			AppendMenu(trayMenu, MF_STRING, POPMENU_IDM_EXIT, _T("Exit")); 
 			AppendMenu(trayMenu, MF_STRING, POPMENU_IDM_ABOUT, _T("About...")); 
 
+			//Steal Focus(in order to enable arrow keys & Esc)
+			HWND hCurWnd = ::GetForegroundWindow();   
+			DWORD dwCurID = ::GetWindowThreadProcessId(hCurWnd, NULL);   
+			DWORD dwThisID = ::GetCurrentThreadId();   
+			::AttachThreadInput(dwCurID, dwThisID, TRUE);   
+			::SetForegroundWindow(appWnd);   
+
 			//Show menu
 			int select = 
 				TrackPopupMenu(trayMenu,
@@ -336,6 +343,10 @@ void WINAPI HandleTrayIcon(WPARAM wParam, LPARAM lParam)
 				NULL);
 
 			DestroyMenu(trayMenu);
+
+			//Restore Focus
+			::AttachThreadInput(dwCurID, dwThisID, FALSE);
+			::SetForegroundWindow(appWnd);
 
 			if(POPMENU_IDM_EXIT == select)				//Exit
 				PostMessage(appWnd, WM_DESTROY, 0, 0);
