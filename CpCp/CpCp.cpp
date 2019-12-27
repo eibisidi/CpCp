@@ -178,7 +178,7 @@ void WINAPI UpdateCpCp(HWND hwnd)
 	if (!OpenClipboard(hwnd)) 
 		return; 
 
-	if (IsClipboardFormatAvailable(CF_TEXT))
+	if (IsClipboardFormatAvailable(CF_UNICODETEXT))
 	{
 		HGLOBAL		hglb;
 		LPTSTR		lptstr;
