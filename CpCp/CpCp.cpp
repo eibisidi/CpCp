@@ -233,6 +233,9 @@ void WINAPI HandlePaste(WPARAM wParam, LPARAM lParam)
 
 	HWND prevForeWnd = (HWND)wParam;
 
+	if (cbBuffer.empty())
+		return;
+
 	//Get Current Mouse Cousor Position
 	POINT curorPos;
 	if (!GetCursorPos(&curorPos))
