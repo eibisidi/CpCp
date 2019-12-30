@@ -253,6 +253,9 @@ void WINAPI HandlePaste(WPARAM wParam, LPARAM lParam)
 		AppendMenu(cpMenu, MF_STRING, (i+1)/*menuitem id*/, menuText[i]); 
 	}
 
+	//Highlight the first menuitem
+	HiliteMenuItem(appWnd,cpMenu, 0, MF_BYPOSITION |MF_HILITE );
+
 	//Steal Focus(in order to enable arrow keys & Esc)
 	HWND hCurWnd = ::GetForegroundWindow();   
 	DWORD dwCurID = ::GetWindowThreadProcessId(hCurWnd, NULL);   
